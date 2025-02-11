@@ -1,0 +1,19 @@
+a=input()
+lst=[0 for _ in range(26)]
+for i in a:
+  num=ord(i) 
+  if num>=97 and num <= 122:
+    lst[num-97] += 1
+  else:
+    lst[num-65] += 1
+b=max(lst)
+llst=[]
+for i in lst:
+  if i == b:
+    llst.append(i)
+if len(llst) != 1:
+  print("?")
+else:
+  for i in range(26):
+    if lst[i] == b:
+      print(chr(i+65))
