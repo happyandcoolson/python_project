@@ -1,0 +1,48 @@
+import random
+
+def baseball(a, num):
+    num=str(num)
+    a=str(a)
+    s=""
+    lst=[0, 0, 0]
+    for i in range(4):
+        if str(a[i]) == str(num[i]):
+            lst[0] += 1
+            s+="v"
+        elif str(num[i]) in str(a):
+            lst[1] += 1
+            s+="o"
+        else:
+            lst[2] += 1
+            s+="x"
+    c=lst[0], "스트라이크", lst[1], "볼", lst[2], "아웃"
+    return c
+
+a= random.randrange(1000, 9999)
+print(a)
+c=0
+lst=[]
+for i in str(a):
+    lst.append(int(i))
+d=1
+print("야구게임 형식으로 힌트를 드립니다")
+print("힌트는 두 번까지 얻을 수 있으며")
+print("힌트를 얻고 싶으면 내가 예상한 숫자+1이라고 입력해주시면됩니다.")
+print("예를 들어")
+print("예상한 숫자가 3450일 때 34501이라고 입력해주시면 됩니다.")
+while c != 5:
+    b=int(input())
+    if len(str(b)) == 5 and d < 3:
+        print(baseball(a, int(str(b)[0:4])))
+        d += 1
+    elif b < a:
+        print("up")
+    elif b > a:
+        print("down")
+    else:
+        print("맞았습니다")
+        break
+    if c + 1 == 5:
+        print("횟수제한에 도달했습니다")
+        print("정답은", a, "입니다")
+    c += 1
