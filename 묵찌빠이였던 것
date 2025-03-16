@@ -1,0 +1,79 @@
+import random
+# a = 컴퓨터
+# b = 사람
+b=input("가위바위보!")
+a = random.choice(["가위", "바위", "보"])
+print(a)
+c=0
+while True:
+    a = 1
+    b = 1
+    if c == -1:
+        break
+    if c == 1:
+        b=input()
+        a = random.choice(["가위", "바위", "보"])
+        print(a)
+        if a == "가위":
+            if b == "보":
+                c=1
+            else:
+                c = 2
+        elif a == "보":
+            if b == "주먹":
+                c = 1
+            else:
+                c = 2
+        else:
+            if b == "가위":
+                c = 1
+            else:
+                c = 2
+        if b == a:
+            print("당신이 이겼습니다")
+            c = -1
+    elif c == 2:
+        a = random.choice(["가위", "바위", "보"])
+        b = input()
+        print(a)
+        if a == "가위":
+            if b == "보":
+                c=1
+            else:
+                c = 2
+        elif a == "보":
+            if b == "주먹":
+                c = 1
+            else:
+                c = 2
+        else:
+            if b == "가위":
+                c = 1
+            else:
+                c = 2
+        if b == a:
+            print("당신이 졌습니다")
+            c = -1
+    elif c == 0:
+        while a == b:
+            b = input("가위바위보!")
+            a = random.choice(["가위", "바위", "보"])
+            print(a)
+            if a != b:
+                break
+        if a == "가위":
+            if b == "보":
+                c=1
+            else:
+                c = 2
+        elif a == "보":
+            if b == "주먹":
+                c = 1
+            else:
+                c = 2
+        else:
+            if b == "가위":
+                c = 1
+            else:
+                c = 2
+
