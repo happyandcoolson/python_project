@@ -1,0 +1,28 @@
+import random
+# a = 컴퓨터
+# b = 사람
+num = 0
+c = 0
+b=input("가위바위보!")
+a = random.choice(["가위", "바위", "보"])
+for i in range(10):
+    b = input("가위바위보!")
+    a = random.choice(["가위", "바위", "보"])
+    print("커퓨터는", a,"를 냈다")
+    print("너는", b,"를 냈다")
+    while a == b:
+        b = input("가위바위보!")
+        a = random.choice(["가위", "바위", "보"])
+    if a == "가위":
+        if b == "보":
+            c = 1
+        elif b == "바위":
+            c = 2
+    elif a == "보":
+        if b == "바위":
+            c = 1
+        elif b == "가위":
+            c = 2
+    else:
+        if b == "가위":
+            c = 1
