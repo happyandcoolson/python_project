@@ -1,0 +1,17 @@
+a, b= input().split()
+num = 0
+lst=[]
+if len(a) == len(b):
+    for i in range(len(a)):
+        if a[i] != b[i]:
+            num += 1
+    print(num)
+elif len(a) < len(b):
+    for i in range(0, len(b)-len(a)+1):
+        n = 0
+        s = b[i:i+len(a)+1]
+        for j in range(len(a)):
+            if a[j] != s[j]:
+                n += 1
+        lst.append(n)
+    print(min(lst))
