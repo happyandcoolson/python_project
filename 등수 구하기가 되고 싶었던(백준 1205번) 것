@@ -1,0 +1,21 @@
+a, b, c=map(int, input().split())
+if b != 0:
+    lst=list(map(int, input().split()))
+
+if len(lst) + 1 <= c:
+    lst.append(b)
+    lst.sort(reverse=True)
+    for idx,num in enumerate(lst):
+        if num == b:
+            print(idx+1)
+            break
+else:
+    if lst[-1] >= b:
+        print(-1)
+    else:
+        lst.append(b)
+        lst.sort(reverse = True)
+        for idx, num in enumerate(lst):
+            if num == b:
+                print(idx+1)
+                break
