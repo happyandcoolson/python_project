@@ -8,15 +8,16 @@ for i in range(b):
     dlst.append(d)
 clst.sort()
 dlst.sort()
-if a < 6:
-    print(dlst[0] * a)
-else:
+specialnumber = 0
+if specialnumber == 0:
     money = 0
     c_count = a // 6
     money += c_count * clst[0]
     d_count = a % 6
     money += d_count * dlst[0]
-    if (c_count+1) * clst[0] < money:
+    if ((c_count+1) * clst[0]) < money:
         print((c_count+1) * clst[0])
+    elif money > dlst[0]*a:
+        print(dlst[0] * a)
     else:
         print(money)
