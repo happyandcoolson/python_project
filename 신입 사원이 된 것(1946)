@@ -1,0 +1,19 @@
+a = int(input())
+test = []
+
+for k in range(a):
+    b = int(input())
+    for i in range(b):
+        test.append(list(map(int, input().split())))
+
+    sorted_test = sorted(test)
+
+    cnt = 0
+    mn = sorted_test[0][1]
+    for i in range(b):
+        if mn >= sorted_test[i][1]:
+            cnt += 1
+            mn = sorted_test[i][1]
+
+    test = []
+    print(cnt)
