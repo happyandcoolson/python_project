@@ -1,0 +1,8 @@
+length = int(input())
+lst=list(map(int, input().split()))
+lst.sort()
+num = 0
+for i in range(length):
+    number_lst=lst[0:i+1]
+    num += sum(number_lst)
+print(num)
