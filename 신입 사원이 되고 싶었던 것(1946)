@@ -1,0 +1,18 @@
+a=int(input())
+for i in range(a):
+    leng=int(input())
+    lst=[]
+    llst=[]
+    num = leng
+    for i in range(leng):
+        paper, face = map(int, input().split())
+        lst.append(paper)
+        llst.append(face)
+        min_paper = min(lst)
+        min_face = min(llst)
+        max_paper = max(lst)
+        max_face = max(llst)
+        if i != 0:
+            if (lst[i] == min_paper or llst[i] == min_face) or (lst[i] < max_paper and lst[i] < max_face):
+                num -= 1
+    print(num)
