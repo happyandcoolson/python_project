@@ -1,19 +1,17 @@
-a = int(input())
-test = []
-
-for k in range(a):
-    b = int(input())
-    for i in range(b):
-        test.append(list(map(int, input().split())))
-
-    sorted_test = sorted(test)
-
-    cnt = 0
-    mn = sorted_test[0][1]
-    for i in range(b):
-        if mn >= sorted_test[i][1]:
-            cnt += 1
-            mn = sorted_test[i][1]
-
-    test = []
-    print(cnt)
+import sys
+input = sys.stdin.readline
+a=int(input().strip())
+for i in range(a):
+    num = 1
+    leng=int(input().strip())
+    lst=[]
+    for j in range(leng):
+        paper, face = map(int, input().strip().split())
+        lst.append([paper, face])
+    lst.sort()
+    rank = lst[0][1]
+    for m in range(1, leng):
+        if lst[m][1] < rank:
+            num += 1
+            rank = lst[m][1]
+    print(num)
