@@ -1,0 +1,10 @@
+import sys
+input = sys.stdin.readline
+a = int(input().strip())
+lst = list(map(int, input().strip().split()))
+llst = sorted(set(lst))
+
+dic = {num:idx for idx, num in enumerate(llst)}
+
+for i in lst:
+    print(dic[i], end=' ')
