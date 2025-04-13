@@ -1,0 +1,10 @@
+a, b=map(int, input().split())
+real_lst=[]
+for i in range(a):
+    lst=list(map(int, input().split()))
+    real_lst.append(lst)
+    real_lst.sort(key=lambda x:(-x[1], -x[2], -x[3]))
+    print(real_lst)
+for i in range(len(real_lst)):
+    if real_lst[i][0] == b:
+        print(i+1)ㄱ
