@@ -1,0 +1,11 @@
+import sys
+input = sys.stdin.readline
+a, b = map(int, input().strip().split())
+lst=list(map(int, input().strip().split()))
+prefix = [0] * (a+1)
+for i in range(1, a+1):
+    prefix[i] = prefix[i-1] + lst[i-1]
+
+for j in range(b):
+    num1, num2 = map(int, input().split())
+    print(prefix[num2] - (prefix[num1-1]))
