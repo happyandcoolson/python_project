@@ -1,0 +1,20 @@
+import sys
+input = sys.stdin.readline
+a,b=map(int, input().strip().split())
+sore_lst=[]
+d_lst=[]
+leaderboard=[1]
+for i in range(a):
+  score=list(map(int, input().strip().split()))
+  sore_lst.append(score)
+  score_lst = sorted(sore_lst, key=lambda x:(-x[1], -x[2], -x[3]))
+for i in score_lst:
+  d_lst.append(i[0])
+for i in range(1, a):
+  if score_lst[i-1][1] == score_lst[i][1] and score_lst[i-1][2] == score_lst[i][2] and score_lst[i-1][3] == score_lst[i][3]:
+    c=leaderboard[i-1]
+    leaderboard.append(c)
+  else:
+    leaderboard.append(i+1)
+last_num = d_lst.index(b)
+print(leaderboard[last_num])
