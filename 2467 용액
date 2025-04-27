@@ -1,0 +1,19 @@
+a=int(input())
+lst=list(map(int, input().split()))
+mini =2000000001
+mini_left, mini_right = 0, 0
+left = 0
+right = a-1
+while left < right:
+    num = lst[left] + lst[right]
+    if abs(num) < mini:
+        mini = abs(num)
+        mini_left = left
+        mini_right = right
+    if num < 0:
+        left += 1
+    elif num > 0:
+        right -= 1
+
+
+print(lst[mini_left], lst[mini_right])
