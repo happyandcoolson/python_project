@@ -1,0 +1,69 @@
+import tkinter as tk
+import tkinter.font as font
+import time
+window = tk.Tk()
+window.title('끝말잇기')
+window.geometry("600x400+100+100")
+window.resizable(False, False)
+
+score=0
+used_lst=[]
+
+
+def starttimer():
+    if (running):
+        global timer
+        timer -= 1
+        timetext.configure(text=str(timer))
+
+    if timer == 0:
+        stop_label.place(x=10, y=250)
+        time.sleep(1)
+        exit()
+    window.after(1000, starttimer)
+
+
+def start():
+    global running
+    running = True
+
+def btn_func():
+    string = ent.get()
+    used_lst.append(string)
+    computer_means_label.place(x=10, y=180)
+    computer_word_label.place(x=10, y=120)
+    timer = 5
+
+btn = tk.Button(window, width=10, text="버튼", command=btn_func)
+btn.place(x=270, y=70)
+# 플레이어 입력창
+entry_font = font.Font(family='맑은 고딕', size=20)
+label_font = font.Font(family='맑은 고딕', size=15)
+ent = tk.Entry(window, justify='left', width=30, relief='solid', font=entry_font)
+ent.place(x=10, y=30)
+
+
+# 컴퓨터의 단어+뜻 표시창,
+computer_word_label = tk.Label(text="사과", font=entry_font)
+
+
+computer_means_label = tk.Label(text="빨간색이고 맛있는 과일", font=label_font)
+
+
+stop_label = tk.Label(text=f"시간 초과되었습니다 점수는 {score}점입니다.", font = label_font)
+
+used_word_label = tk.Label(text=f"사용한 단어들은 {used_lst}입니다", font=label_font)
+used_word_label.place(x=10, y=300)
+# 사용한 단어리스트를 보여줄 창
+# 점수 현황판, 타이머
+
+running = True
+
+timer = 5
+
+timetext = tk.Label(window, text="5", font=("Helvetica", 20))
+timetext.place(x=550, y=30)
+
+starttimer()
+
+window.mainloop()
