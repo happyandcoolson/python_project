@@ -1,0 +1,76 @@
+import time
+import pygame
+import sys
+import random
+BLOCK_SIZE = 30
+BOARD_WIDTH = 10
+BOARD_HEIGHT = 20
+# ================================================SETTING===============================================================
+SCREEN_WIDTH = BLOCK_SIZE * BOARD_WIDTH
+SCREEN_HEIGHT =  BLOCK_SIZE * BOARD_HEIGHT
+color = {'BLACK' : (0,0,0), 'GRAY' : (50,50,50), 'blue' : (0,0,255), 'red':(255,0,0), 'WHITE':(200,200,200), 'CYAN':(0,230,230)}
+
+DROP_INTERVAL = 0.5
+# ================================================TEtroMinO============================================================
+class Tetromino:
+    def __init__(self, x, y, shape, color):
+        self.x = x
+        self.y = y
+        self.shape = shape
+        self.color = color
+    def draw(self, surface):
+        for row_idx, row in enumerate(self.shape):
+            for cal_idx, cell in enumerate(row):
+                if cell:
+                    px = (self.x+cal_idx) * BLOCK_SIZE
+                    py = (self.y+row_idx) * BLOCK_SIZE
+                    rect = pygame.Rect(px, py, BLOCK_SIZE, BLOCK_SIZE)
+                    pygame.draw.rect(surface, self.color, rect)
+
+class Game:
+    def __init__(self,screen):
+        self.screen = screen
+        self.clock = pygame.time.Clock()
+        self.last_drop_time = time.time()
+        I_SHAPE = [[1],[1],[1],[1]]
+        self.current = Tetromino(3, 0, [I_SHAPE], color['CYAN'])
+
+    def draw_grid(self):
+        for x in range(BOARD_WIDTH):
+            for y in range(BOARD_HEIGHT):
+                rect = pygame.Rect(x * BLOCK_SIZE, y * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE)
+                pygame.draw.rect(self.screen, color['GRAY'], rect, 3)
+    def update(self):
+        now = time.time()
+        if now - self.last_drop_time >= DROP_INTERVAL:
+            self.current.y += 1
+            self.last_drop_time = now
+    def draw(self):
+        self.screen.fill(color['BLACK'])
+        self.draw_grid()
+        self.current.draw(self.screen)
+        pygame.display.flip()
+    def run(self):
+        running = True
+        while running:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+            self.update()
+            self.draw()
+            self.clock.tick(60)
+        pygame.quit()
+        sys.exit()
+
+# =====================================================reset============================================================
+def main():
+    pygame.init()
+    screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+    pygame.display.set_caption("Tetris")
+    game = Game(screen)
+    game.run()
+
+
+if __name__ == "__main__":
+    main()
