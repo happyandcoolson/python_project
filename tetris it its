@@ -1,0 +1,109 @@
+import time
+import pygame
+import sys
+import random
+BLOCK_SIZE = 30
+BOARD_WIDTH = 10
+BOARD_HEIGHT = 20
+move_interval = 0.05
+spint_interval = 0.7
+# ================================================SETTING===============================================================
+SCREEN_WIDTH = BLOCK_SIZE * BOARD_WIDTH
+SCREEN_HEIGHT =  BLOCK_SIZE * BOARD_HEIGHT
+color = {'BLACK' : (0,0,0), 'GRAY' : (50,50,50), 'blue' : (0,0,255), 'red':(255,0,0), 'WHITE':(200,200,200), 'CYAN':(0,230,230)}
+# ================================================TEtroMinO============================================================
+class Tetromino:
+    def __init__(self, x, y, shape, color):
+        self.x = x
+        self.y = y
+        self.shape = shape
+        self.color = color
+    def draw(self, surface):
+        for row_idx, row in enumerate(self.shape):
+            for cal_idx, cell in enumerate(row):
+                if cell:
+                    px = (self.x+cal_idx) * BLOCK_SIZE
+                    py = (self.y+row_idx) * BLOCK_SIZE
+                    rect = pygame.Rect(px, py, BLOCK_SIZE, BLOCK_SIZE)
+                    pygame.draw.rect(surface, self.color, rect)
+
+
+class Game:
+    def __init__(self,screen, next_block):
+        self.screen = screen
+        self.clock = pygame.time.Clock()
+        self.last_drop_time = time.time()
+        self.last_move_time = time.time()
+        self.next_block = next_block
+        self.last_turn_time = time.time()
+        self.I_SHAPE = [[[1,0,0],[1,1,1]],[[0,1],[0,1],[1,1]],[[1,1,1],[0,0,1]],[[1,1],[1,0],[1,0]]]
+        self.a = a = 0
+        self.current = Tetromino(3,2,self.I_SHAPE[self.a], color['CYAN'])
+    def draw_grid(self):
+        for x in range(BOARD_WIDTH):
+            for y in range(BOARD_HEIGHT):
+                rect = pygame.Rect(x * BLOCK_SIZE, y * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE)
+                pygame.draw.rect(self.screen, color['GRAY'], rect, 3)
+    def update(self, DROP_INTERVAL):
+        direction=[]
+        pressed = pygame.key.get_pressed()
+        if pressed[pygame.K_LEFT]:
+            direction=[-1]
+        if pressed[pygame.K_RIGHT]:
+            direction=[1]
+        if pressed[pygame.K_DOWN]:
+            DROP_INTERVAL = 0.1
+        now = time.time()
+        if pressed[pygame.K_a]:
+            if now - self.last_turn_time >= move_interval:
+                self.current.shape = self.I_SHAPE[(self.a+1)%4]
+                self.a += 1
+                self.last_turn_time = now
+
+        if now - self.last_drop_time >= DROP_INTERVAL:
+            if self.current.y < 20-len(self.current.shape):
+                self.current.y += 1
+                self.last_drop_time = now
+            if self.current.y == 20-len(self.current.shape):
+                self.next_block = True
+        if now - self.last_move_time >= move_interval:
+            if direction and len(direction) == 1:
+                if direction == [1]:
+                    if self.current.x+len(self.current.shape[0]) <= 9:
+                        self.current.x += direction[0]
+                elif direction == [-1]:
+                    if self.current.x >= 1:
+                        self.current.x += direction[0]
+                self.last_move_time = now
+
+
+    def draw(self):
+        self.screen.fill(color['BLACK'])
+        self.draw_grid()
+        self.current.draw(self.screen)
+        pygame.display.flip()
+    def run(self):
+        running = True
+        while running:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+
+            self.update(0.5)
+            self.draw()
+            self.clock.tick(60)
+        pygame.quit()
+        sys.exit()
+
+# =====================================================reset============================================================
+def main():
+    pygame.init()
+    screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+    pygame.display.set_caption("Tetris")
+    game = Game(screen, False)
+    game.run()
+
+
+if __name__ == "__main__":
+    main()
