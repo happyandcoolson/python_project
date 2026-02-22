@@ -1,0 +1,177 @@
+import time
+import pygame
+import sys
+import random
+BLOCK_SIZE = 30
+BOARD_WIDTH = 10
+BOARD_HEIGHT = 20
+move_interval = 0.05
+spint_interval = 0.3
+# ================================================SETTING===============================================================
+SCREEN_WIDTH = BLOCK_SIZE * BOARD_WIDTH
+SCREEN_HEIGHT =  BLOCK_SIZE * BOARD_HEIGHT
+color = {'BLACK' : (0,0,0), 'GRAY' : (50,50,50), 'blue' : (0,0,255), 'red':(255,0,0), 'WHITE':(200,200,200), 'CYAN':(0,230,230)}
+grid = [[0 for _ in range(10)]for _ in range(21)]
+# ================================================TEtroMinO============================================================
+class Tetromino:
+    def __init__(self, x, y, shape, color):
+        self.x = x
+        self.y = y
+        self.shape = shape
+        self.color = color
+    def draw(self, surface):
+        for row_idx, row in enumerate(self.shape):
+            for cal_idx, cell in enumerate(row):
+                if cell:
+                    px = (self.x+cal_idx) * BLOCK_SIZE
+                    py = (self.y+row_idx) * BLOCK_SIZE
+                    rect = pygame.Rect(px, py, BLOCK_SIZE, BLOCK_SIZE)
+                    pygame.draw.rect(surface, self.color, rect)
+    def rotate(self):
+        self.shape = [list(row) for row in zip(*self.shape[::-1])]
+
+class Board:
+    def __init__(self,width, height,shape,x,y):
+        self.width = 10
+        self.height = 20
+        self.shape=shape
+        self.x = x
+        self.y = y
+    def is_valid(self, x,y,piece=None,dx=0,dy=0):
+        changed = [x+dx, y+dy]
+        for row_idx, row in enumerate(self.shape):
+            for cal_idx, cell in enumerate(row):
+                if cell == 1:
+                    # print(row_idx, x, dx, cal_idx, y, dy)
+                    if grid[cal_idx+y+dy][row_idx+x+dx] == 1:
+                        #print("False1")
+                        return False
+
+                    elif x+dx < 0 or x+dx+row_idx >= self.width:
+                        #print("False2")
+                        return False
+                    elif y+dy+cal_idx >= self.height:
+                        #print("False3")
+                        return False
+        return True
+
+    def lock_piece(self):
+        if self.is_valid(self.x, self.y, dy=1)
+        pass
+        y = """
+        new_y = self.y + 1
+        for row_idx, row in enumerate(self.shape):
+            for cal_idx, cell in enumerate(row):
+                print(self.x, self.y, row_idx, cal_idx)
+                if cell:
+                    if grid[self.x+row_idx][new_y+cal_idx] == 1:
+                        stop = 1
+        if stop == 1:
+            for row_idx, row in enumerate(self.shape):
+                for cal_idx, cell in enumerate(row):
+                    if cell:
+                        grid[self.x + row_idx, self.y + cal_idx] = 1
+        print(grid)
+    def draw(self):
+        for row_idx, row in enumerate(self.shape):
+            for cal_idx, cell in enumerate(row):
+                if cell:
+                    px = (self.x+cal_idx) * BLOCK_SIZE
+                    py = (self.y+row_idx) * BLOCK_SIZE
+                    rect = pygame.Rect(px, py, BLOCK_SIZE, BLOCK_SIZE)
+                    pygame.draw.rect(self.screen, self.color, rect)
+        """
+
+class Game:
+    def __init__(self,screen):
+        self.screen = screen
+        self.clock = pygame.time.Clock()
+        self.last_drop_time = time.time()
+        self.last_move_time = time.time()
+        self.last_turn_time = time.time()
+        self.I_SHAPE = [[[0,1,0],[1,1,1]]]
+        self.a = a = 0
+        self.current = Tetromino(3,2,self.I_SHAPE[self.a], color['CYAN'])
+        self.screen1 = Board(10,20, self.current.shape)
+
+    def can_move(self, dx=0, dy=0, shape=None):
+        shape = shape if shape else self.current.shape
+        for r, row in enumerate(shape):
+            for c, cell in enumerate(row):
+                if cell:
+                    nx = self.current.x + c + dx
+                    ny = self.current.y + r + dy
+                    print(self.current.x, c, dx, self.current.y, r, dy)
+                    if nx < 0 or nx >= BOARD_WIDTH:
+                        return False
+                    if ny < 0 or ny >= BOARD_HEIGHT:
+                        return False
+        return True
+
+
+    def try_rotate(self):
+        old_shape = [row[:] for row in self.current.shape]
+        self.current.rotate()
+        if not self.can_move(shape=self.current.shape):
+            self.current.shape = old_shape
+    def draw_grid(self):
+        for x in range(BOARD_WIDTH):
+            for y in range(BOARD_HEIGHT):
+                rect = pygame.Rect(x * BLOCK_SIZE, y * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE)
+                pygame.draw.rect(self.screen, color['GRAY'], rect, 3)
+    def update(self, DROP_INTERVAL):
+        direction=[]
+        pressed = pygame.key.get_pressed()
+        if pressed[pygame.K_DOWN]:
+            DROP_INTERVAL = 0.1
+        now = time.time()
+        if now - self.last_drop_time >= DROP_INTERVAL:
+            if self.current.y < 20-len(self.current.shape):
+                self.current.y += 1
+                self.last_drop_time = now
+        screen1 = Board(10,20,self.current.shape, self.c)
+        screen1.is_valid(self.current.x, self.current.y, dx=0, dy=1)
+    def new_blocks(self):
+        pass
+
+    def draw(self):
+        self.screen.fill(color['BLACK'])
+        self.draw_grid()
+        self.current.draw(self.screen)
+        pygame.display.flip()
+    def run(self):
+        running = True
+        while running:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_LEFT and self.can_move(dx = -1):
+
+                        self.current.x -= 1
+                    elif event.key == pygame.K_RIGHT and self.can_move(dx = 1):
+                        self.current.x += 1
+                    elif event.key == pygame.K_UP:
+                        self.try_rotate()
+            self.update(0.5)
+            self.draw()
+            self.clock.tick(60)
+            self.screen1.lock_piece()
+        pygame.quit()
+        sys.exit()
+
+# =====================================================reset============================================================
+def main():
+    pygame.init()
+    screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+    pygame.display.set_caption("Tetris")
+
+    game = Game(screen)
+
+    game.run()
+
+
+if __name__ == "__main__":
+    main()
