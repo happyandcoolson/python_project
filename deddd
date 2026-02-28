@@ -1,0 +1,259 @@
+import time
+import pygame
+import sys
+import random
+BLOCK_SIZE = 30
+BOARD_WIDTH = 10
+BOARD_HEIGHT = 19
+move_interval = 0.05
+spint_interval = 0.3
+# ================================================SETTING===============================================================
+SCREEN_WIDTH = BLOCK_SIZE * BOARD_WIDTH
+SCREEN_HEIGHT =  BLOCK_SIZE * BOARD_HEIGHT
+color = {'BLACK' : (0,0,0), 'GRAY' : (50,50,50), 'blue' : (0,0,255), 'red':(255,0,0), 'WHITE':(200,200,200), 'CYAN':(0,230,230)}
+grid = [[0 for _ in range(10)]for _ in range(20)] # 쌓여진 블록들의 표시]
+next_block = 1
+a=""
+# ================================================TEtroMinO============================================================
+class Tetromino:
+    def __init__(self, x, y, shape, color):
+        """
+        :param x: 생성된 블록의 맨 위, 왼쪽 자리의 x값
+        :param y: 생성된 블록의 맨 위, 왼쪽 자리의 y값
+        :param shape: 블록의 모양([[0,1,0],[1,1,1]] 이런 식)
+        :param color: 생성될 블록의 색깔
+        """
+        self.x = x
+        self.y = y
+        self.shape = shape
+        self.color = color
+    def draw(self, surface):
+        """
+
+        :param surface: 블록을 그릴 표면(screen임)
+        :return: X 그냥 그려주는 역할
+        """
+        for row_idx, row in enumerate(self.shape):
+            for cal_idx, cell in enumerate(row):
+                if cell:
+                    px = (self.x+cal_idx) * BLOCK_SIZE
+                    py = (self.y+row_idx) * BLOCK_SIZE
+                    rect = pygame.Rect(px, py, BLOCK_SIZE, BLOCK_SIZE)
+                    pygame.draw.rect(surface, self.color, rect)
+    def rotate(self):
+        """
+
+        :return: X, 그냥 회전시킴
+        """
+        self.shape = [list(row) for row in zip(*self.shape[::-1])]
+
+class Board:
+    def __init__(self,width, height,shape,x,y):
+        """
+
+        :param width: 보드판 너비
+        :param height: 보드판 길이
+        :param shape: 물체의 모양
+        :param x: 물체의 가장 왼쪽, 가장 위 칸의 x 값
+        :param y: 물체의 가장 왼쪽, 가장 위 칸의 y값
+        """
+
+        self.width = 10
+        self.height = 20
+        self.shape=shape
+        self.x = x
+        self.y = y
+    def is_valid(self,dx=0,dy=0):
+        """
+
+        :param dx: x 방향으로 움직이는 칸의 수
+        :param dy: y 방향으로 움직이는 칸의 수
+        :return: 움직일 수 없다면 False, 움직일 수 있다면 True
+        """
+        changed = [self.x+dx, self.y+dy]
+        for row_idx, row in enumerate(self.shape):
+            for cal_idx, cell in enumerate(row):
+                if cell == 1:
+                    if grid[row_idx+self.y+dy][cal_idx+self.x+dx] == 1:
+                        #print("False1")
+                        return False
+
+                    elif self.x+dx < 0 or self.x+dx+row_idx >= self.width:
+                        #print("False2")
+                        return False
+                    elif self.y+dy+cal_idx >= self.height:
+                        #print("False3")
+                        return False
+        return True
+
+
+    def lock_piece(self):
+        """
+
+        :return: X, 더 이상 움직일 수 없다면 이제 고정(grid 값을 1로 변경)
+        """
+        if not self.is_valid(dy=1):
+            for row_idx, row in enumerate(self.shape):
+                for cal_idx, cell in enumerate(row):
+                    if cell:
+                        grid[self.y+row_idx][self.x+cal_idx] = 1
+
+
+class Game:
+    def __init__(self,screen):
+        """
+
+        :param screen: 표시할 표면(screen임)
+        """
+        self.screen = screen
+        self.clock = pygame.time.Clock()
+        self.last_drop_time = time.time()
+        self.last_move_time = time.time()
+        self.last_turn_time = time.time()
+        self.I_SHAPE = [[[0,1,0],[1,1,1]]]
+        self.a = a = 0
+        self.current = Tetromino(3,2,self.I_SHAPE[self.a], color['CYAN'])
+
+    def can_move(self, dx=0, dy=0, shape=None):
+        """
+
+        :param dx: 움직일 x값
+        :param dy: 움직일 y값
+        :param shape: 블록 모양
+        :return: 움직인 후 범위를 벗어나지 않는지 확인 후 범위 벗어나면 False 범위 안 벗어나면 True
+        """
+        shape = shape if shape else self.current.shape
+
+        for r, row in enumerate(shape):
+            for c, cell in enumerate(row):
+                if cell:
+                    nx = self.current.x + c + dx
+                    ny = self.current.y + r + dy
+
+                    if nx < 0 or nx >= BOARD_WIDTH:
+                        return False
+                    if ny < 0 or ny >= BOARD_HEIGHT:
+                        return False
+                    if grid[ny][nx] == 1:
+                        return False
+        return True
+
+    def draw1(self,screen, color):
+        for row_idx, row in enumerate(grid):
+            for cal_idx, cell in enumerate(row):
+                if cell:
+                    px = (cal_idx) * BLOCK_SIZE
+                    py = (row_idx) * BLOCK_SIZE
+                    rect = pygame.Rect(px, py, BLOCK_SIZE, BLOCK_SIZE)
+                    pygame.draw.rect(screen, color, rect)
+
+    def try_rotate(self):
+        """
+
+        :return: True/False 만약 회전이 안 된다면 그냥 냅두고 안 되면 회전시킨 모양으로 변화시킴
+        """
+        old_shape = [row[:] for row in self.current.shape]
+        self.current.rotate()
+        if not self.can_move(shape=self.current.shape):
+            self.current.shape = old_shape
+    def draw_grid(self):
+        """
+
+        :return: X, 격자무늬 그려줌
+        """
+        for x in range(BOARD_WIDTH):
+            for y in range(BOARD_HEIGHT):
+                rect = pygame.Rect(x * BLOCK_SIZE, y * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE)
+                pygame.draw.rect(self.screen, color['GRAY'], rect, 3)
+
+    def update(self, DROP_INTERVAL):
+        pressed = pygame.key.get_pressed()
+        if pressed[pygame.K_DOWN]:
+            DROP_INTERVAL = 0.05
+
+        now = time.time()
+        if now - self.last_drop_time >= DROP_INTERVAL:
+
+            if self.can_move(dy=1):
+                self.current.y += 1
+            else:
+                # 현재 블록 고정
+                for r, row in enumerate(self.current.shape):
+                    for c, cell in enumerate(row):
+                        if cell:
+                            grid[self.current.y + r][self.current.x + c] = 1
+
+                # 새 블록 생성
+                self.current = Tetromino(3, 0, self.I_SHAPE[0], color['CYAN'])
+
+            self.last_drop_time = now
+
+    def new_blocks(self):
+        """
+
+        :return: X, 새 블록 생성
+        """
+        self.current.x = 3
+        self.current.y = 2
+    def delete_block(self):
+        for i in range(0, 19,1):
+            for j in range(0, 10):
+                print(grid[i][j])
+                if grid[i][j] == 0:
+                    break
+            else:
+                for i in range(18,-1,-1):
+                    for j in range(0,10):
+                        grid[i+1][j] = grid[i][j]
+
+
+
+    def draw(self):
+        """
+
+        :return: 지금까지 생성한 격자 무늬, 블록들을 그림
+        """
+        self.screen.fill(color['BLACK'])
+        self.draw_grid()
+        self.current.draw(self.screen)
+        self.draw1(self.screen, self.current.color)
+        pygame.display.flip()
+    def run(self):
+        """
+
+        :return: X, 지금까지 만든 함수를 모아서 진행시킴
+        """
+        running = True
+        while running:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_LEFT and self.can_move(dx = -1):
+                        self.current.x -= 1
+                    elif event.key == pygame.K_RIGHT and self.can_move(dx = 1):
+                        self.current.x += 1
+                    elif event.key == pygame.K_UP:
+                        self.try_rotate()
+            self.delete_block()
+            self.update(0.5)
+            self.draw()
+            self.clock.tick(60)
+        pygame.quit()
+        sys.exit()
+
+# =====================================================reset============================================================
+def main():
+    pygame.init()
+    screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+    pygame.display.set_caption("Tetris")
+
+    game = Game(screen)
+
+    game.run()
+
+
+if __name__ == "__main__":
+    main()
