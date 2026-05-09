@@ -1,0 +1,295 @@
+import tkinter as tk
+from tkinter import ttk, messagebox
+import requests
+import pandas as pd
+import os
+
+servicekey = os.getenv("KEY")
+info_db = pd.read_excel('출력메세지_식품영양성분DB정보.xlsx')
+info_dict = dict(info_db[0:][["paramtrNm", "paramtrDc"]].values)
+NUTRITIONS=['수분(g)', '단백질(g)', '지방(g)', '탄수화물(g)', '나트륨(mg)', '식이섬유(g)']
+class NutritionTrackerApp:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("오늘의 영양소")
+        self.root.geometry("750x400")
+        self.user_info = None
+        self.load_user()
+        self.total_nutrients = {
+            '수분(g)': 0,
+            '단백질(g)': 0,
+            '지방(g)': 0,
+            '탄수화물(g)': 0,
+            '나트륨(mg)': 0,
+            '식이섬유(g)': 0
+        }
+        # 기본 스타일 설정
+        style = ttk.Style()
+        style.theme_use('clam')  # 운영체제에 상관없이 일관된 UI를 위해 테마 설정
+        style.configure("TLabel", font=("맑은 고딕", 10))
+        style.configure("Header.TLabel", font=("맑은 고딕", 12, "bold"))
+
+        self.create_widgets()
+
+    def load_user(self):
+        try:
+            with open("fruits.txt", "r", encoding="utf-8") as f:
+                lines = f.readlines()
+                if lines:
+                    last = lines[-1].strip().split(",")
+                    self.user_info = {
+                        "age": int(last[0]),
+                        "gender": last[1],
+                        "height": int(last[2]),
+                        "weight": int(last[3]),
+                        "movement": last[4],
+                        "goal": last[5]
+                    }
+        except:
+            self.user_info = None
+    def create_widgets(self):
+        # 전체를 좌우로 나누는 메인 프레임
+        main_frame = ttk.Frame(self.root, padding=10)
+        main_frame.pack(fill=tk.BOTH, expand=True)
+
+        # ==========================================
+        # ==== 좌측 프레임 (음식 검색 및 입력 영역) ====
+        # ==========================================
+        left_frame = ttk.Frame(main_frame)
+        left_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 15))
+
+        # 1. 음식 검색 영역
+        search_frame = ttk.Frame(left_frame)
+        search_frame.pack(fill=tk.X, pady=(0, 10))
+
+        ttk.Label(search_frame, text="음식:").pack(side=tk.LEFT, padx=(0, 5))
+        self.search_entry = ttk.Entry(search_frame)
+        self.search_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 5))
+
+        ttk.Button(search_frame, text="검색", command=self.search_food).pack(side=tk.LEFT)
+
+        # 2. 검색 목록 영역
+        list_frame = ttk.Frame(left_frame)
+        list_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
+
+        self.result_list = tk.Listbox(list_frame, selectmode=tk.SINGLE, font=("맑은 고딕", 10))
+        self.result_list.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
+        # 스크롤바 연결
+        scrollbar = ttk.Scrollbar(list_frame, orient=tk.VERTICAL, command=self.result_list.yview)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        self.result_list.config(yscrollcommand=scrollbar.set)
+
+        # 3. 먹은 양 입력 영역
+        amount_frame = ttk.Frame(left_frame)
+        amount_frame.pack(fill=tk.X, pady=(0, 10))
+
+        ttk.Label(amount_frame, text="먹은 양:").pack(side=tk.LEFT, padx=(0, 5))
+        self.amount_entry = ttk.Entry(amount_frame, width=10, justify="right")
+        self.amount_entry.insert(0, "100")  # 기본값
+        self.amount_entry.pack(side=tk.LEFT, padx=(0, 5))
+
+        # g / % 선택 콤보박스
+        self.unit_var = tk.StringVar(value="g")
+        self.unit_combo = ttk.Combobox(amount_frame, textvariable=self.unit_var, values=["g", "%"], width=3,
+                                  state="readonly")
+        self.unit_combo.pack(side=tk.LEFT)
+
+        # 4. 하단 등록 버튼
+        ttk.Button(left_frame, text="등록", command=self.register_food).pack(anchor=tk.E)
+
+        # ==========================================
+        # === 우측 프레임 (목표량 및 설정 영역)  ===
+        # ==========================================
+        right_frame = ttk.Frame(main_frame)
+        right_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
+
+        # 1. 상단 설정 버튼 영역 (기본 윈도우 타이틀바를 수정하는 대신 우측 상단에 배치)
+        top_right_frame = ttk.Frame(right_frame)
+        top_right_frame.pack(fill=tk.X)
+
+        settings_btn = ttk.Button(top_right_frame, text="⚙ 설정", command=self.open_settings, width=10)
+        settings_btn.pack(side=tk.RIGHT)
+
+        # 2. 영양소 타이틀
+        ttk.Label(right_frame, text="영양소별 1일 목표량", style="Header.TLabel", anchor="center").pack(fill=tk.X,
+                                                                                                pady=(10, 10))
+
+        # 3. 영양소 표 (Treeview 사용)
+        columns = ("Nutrient", "Amount", 'Standard')
+        self.tree = ttk.Treeview(right_frame, columns=columns, show="headings", height=8)
+        self.tree.pack(fill=tk.BOTH, expand=True)
+
+        self.tree.heading("Nutrient", text="영양소")
+        self.tree.heading("Amount", text="현황")
+        self.tree.heading("Standard", text="1일 기준 목표량")
+
+        self.tree.column("Nutrient", anchor="center", width=80)
+        self.tree.column("Amount", anchor="center", width=60)
+        self.tree.column("Standard", anchor="center", width=60)
+
+        bn = 0
+        sn = 9
+        # 표에 기본 항목 추가
+        self.nutrients = NUTRITIONS
+        for nutrient in self.nutrients:
+            self.tree.insert("", "end",iid = nutrient, values=(nutrient,0,0))
+            bn += 1
+    # ==========================================
+    # === 기능 구현 (이벤트 핸들러)          ===
+    # ==========================================
+    def search_food(self):
+        """API 연동을 위한 검색 로직 (현재는 더미 데이터 출력)"""
+        keyword = self.search_entry.get()
+        if not keyword:
+            messagebox.showwarning("입력 오류", "검색할 음식을 입력해주세요.")
+            return
+
+        self.result_list.delete(0, tk.END)
+        params = {'serviceKey': 'abe7a26a998e4c1da86d5781b6a3313a53554fe7fd8900580222e6ae95efa2d0', 'type': 'json', 'FOOD_NM_KR': keyword, 'numOfRows' : 20}
+        url = "https://apis.data.go.kr/1471000/FoodNtrCpntDbInfo02/getFoodNtrCpntDbInq02"
+        a = requests.get(url, params=params)
+        a = a.json()
+        the_food = a['body']['items']
+        self.the_food = the_food
+        food_names = []
+
+        for i in the_food:
+            food_names.append(i['FOOD_NM_KR'])
+
+        # TODO: 각자 만든 API 활용함수를 통해 음식 결과를 반영하세요.
+        self.food_list = food_names
+        self.num = 0
+        for item in self.food_list:
+            self.result_list.insert(self.num, food_names[self.num])
+            self.num += 1
+
+    def register_food(self):
+
+        selected_indices = self.result_list.curselection()
+        if not selected_indices:
+            messagebox.showwarning("선택 오류", "검색 목록에서 등록할 음식을 선택해주세요.")
+            return
+
+        food_name = self.result_list.get(selected_indices[0])
+        amount = int(self.amount_entry.get())
+        unit = self.unit_var.get()
+        current_food = self.the_food[self.food_list.index(food_name)]
+        currentt_food = dict()
+        for i in info_dict.keys():
+            currentt_food[info_dict[i]] = current_food[i]
+        current_food = currentt_food
+        a = self.unit_combo.get()
+        print(a)
+        c = 0
+        if a == "%":
+            c=100
+        elif a == "g":
+            c = current_food['영양성분함량기준량'].strip('mL')
+            c=c.strip('g')
+            c = int(c)
+
+        self.total_nutrients['수분(g)'] += float(current_food['수분(g)'])
+        self.total_nutrients['단백질(g)'] += float(current_food['단백질(g)'])
+        self.total_nutrients['지방(g)'] += float(current_food['지방(g)'])
+        self.total_nutrients['탄수화물(g)'] += float(current_food['탄수화물(g)'])
+        self.total_nutrients['나트륨(mg)'] += float(current_food['나트륨(mg)'])
+        self.total_nutrients['식이섬유(g)'] += float(current_food['식이섬유(g)'])
+
+        self.tree.set('수분(g)', 'Amount', round(self.total_nutrients['수분(g)'], 1))
+        self.tree.set('단백질(g)', 'Amount', round(self.total_nutrients['단백질(g)'], 1))
+        self.tree.set('지방(g)', 'Amount', round(self.total_nutrients['지방(g)'], 1))
+        self.tree.set('탄수화물(g)', 'Amount', round(self.total_nutrients['탄수화물(g)'], 1))
+        self.tree.set('나트륨(mg)', 'Amount', round(self.total_nutrients['나트륨(mg)'], 1))
+        self.tree.set('식이섬유(g)', 'Amount', round(self.total_nutrients['식이섬유(g)'], 1))
+        # TODO: 선택된 음식의 영양 정보(API 결과)를 가져와서 목표량 Treeview(self.tree)의 데이터를 갱신하는 로직 작성
+        messagebox.showinfo("등록 완료", f"[{food_name}] {amount}{unit} 섭취가 기록되었습니다.\n\n* 실제 영양소 누적 계산식은 추후 연동 필요")
+
+    def open_settings(self):
+        """사용자 기본 인적 정보 입력 창 (Toplevel)"""
+        settings_win = tk.Toplevel(self.root)
+        settings_win.title("설정창")
+        settings_win.geometry("250x300")
+        settings_win.resizable(False, False)
+
+        # 설정창이 메인창 위에 계속 떠있도록 포커스 고정
+        settings_win.transient(self.root)
+        settings_win.grab_set()
+
+        frame = ttk.Frame(settings_win, padding=20)
+        frame.pack(fill=tk.BOTH, expand=True)
+
+        # 항목 라벨 및 입력창 배치
+        ttk.Label(frame, text="나이:").grid(row=0, column=0, pady=5, sticky=tk.W)
+        self.entry_age = ttk.Entry(frame, width=15)
+        self.entry_age.grid(row=0, column=1, pady=5, sticky=tk.E)
+
+        ttk.Label(frame, text="성별:").grid(row=1, column=0, pady=5, sticky=tk.W)
+        self.combo_gender = ttk.Combobox(frame, values=["남성", "여성"], width=13, state="readonly")
+        self.combo_gender.current(0)
+        self.combo_gender.grid(row=1, column=1, pady=5, sticky=tk.E)
+
+        ttk.Label(frame, text="키(cm):").grid(row=2, column=0, pady=5, sticky=tk.W)
+        self.entry_height = ttk.Entry(frame, width=15)
+        self.entry_height.grid(row=2, column=1, pady=5, sticky=tk.E)
+
+        ttk.Label(frame, text="몸무게(kg):").grid(row=3, column=0, pady=5, sticky=tk.W)
+        self.entry_weight = ttk.Entry(frame, width=15)
+        self.entry_weight.grid(row=3, column=1, pady=5, sticky=tk.E)
+
+        ttk.Label(frame, text='체중 목표').grid(row=4, column=0, pady=5, sticky=tk.W)
+        self.combo_weight_change = ttk.Combobox(frame, values=["감량", "유지", "증량"], width=13, state="readonly")
+        self.combo_weight_change.current(1)
+        self.combo_weight_change.grid(row=4, column=1, pady=5, sticky=tk.E)
+
+        ttk.Label(frame, text='활동량').grid(row=5, column=0, pady=5, sticky=tk.W)
+        self.combo_movement = ttk.Combobox(frame, values=["운동하지 않음", "일주일에 가끔 운동", "일주일에 자주 운동", "매일 운동"], width=13, state="readonly")
+        self.combo_movement.current(2)
+        self.combo_movement.grid(row=5, column=1, pady=5, sticky=tk.E)
+
+        # 등록 버튼
+        save_btn = ttk.Button(frame, text="등록", command=lambda: self.save_settings(settings_win))
+        save_btn.grid(row=6, column=0, columnspan=2, pady=15)
+    def save_settings(self, window):
+        """설정값 저장 및 기초대사량(목표량) 재계산 로직"""
+        age = int(self.entry_age.get())
+        gender = self.combo_gender.get()
+        height = int(self.entry_height.get())
+        weight = int(self.entry_weight.get())
+        movement = self.combo_movement.get()
+        weight_change = self.combo_weight_change.get()
+        multi_num = {"운동하지 않음" : 1.2, "일주일에 가끔 운동" : 1.35, "일주일에 자주 운동":1.5, "매일 운동": 1.75}
+        plus_num = {"감량" : -300, "유지" : 0, "증량": 500}
+        protein, fat, water = weight * 7/5, weight * 0.9, weight * 35
+        proteinKcal, fatKcal = protein * 4, fat * 9
+
+        # BMR
+        BMR = 0
+        if gender == '남성':
+            BMR = 10 * weight + 6.25 * height - 5 * age + 5
+        else:
+            BMR = 10 * weight + 6.25 * height - 5 * age - 161
+        tdee = BMR * multi_num[movement]
+        target_calorie = tdee + plus_num[weight_change]
+        carbKcal = target_calorie - proteinKcal - fatKcal
+        carb = carbKcal / 4
+        sugar = target_calorie*0.07/4
+        fiber = target_calorie / 1000 * 14
+        self.tree.set('수분(g)', 'Standard', int(water))
+        self.tree.set('탄수화물(g)', 'Standard', int(carb))
+        self.tree.set('지방(g)', 'Standard', int(fat))
+        self.tree.set('단백질(g)', 'Standard', int(protein))
+        self.tree.set('나트륨(mg)', 'Standard', 2000)
+        self.tree.set('식이섬유(g)', 'Standard', int(fiber))
+        # TODO: 일일 권장 칼로리 및 영양소 목표량을 계산하고 UI에 갱신하는 로직 작성
+        messagebox.showinfo("설정 완료", "인적 정보가 등록되어 1일 목표량이 재계산됩니다.")
+        data = f"{age},{gender},{height},{weight},{movement},{weight_change}\n"
+
+        with open("fruits.txt", "a", encoding="utf-8") as f:
+            f.write(data)
+        window.destroy()
+
+if __name__ == "__main__":
+    root = tk.Tk()
+    app = NutritionTrackerApp(root)
+    root.mainloop()
